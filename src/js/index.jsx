@@ -16,7 +16,8 @@ class App extends React.Component {
         super(props);
 
         this.state = {
-            markers: []
+            markers: [],
+            user: false
         }
 
         this.onMapCreated = this.onMapCreated.bind(this);
@@ -25,16 +26,30 @@ class App extends React.Component {
         this.onClick = this.onClick.bind(this);
         this.renderMarkers = this.renderMarkers.bind(this);
         this.componentWillMount = this.componentWillMount.bind(this);
+        this.updateUser = this.updateUser.bind(this);
+    }
+
+    updateUser(){
+      let user = JSON.parse(window.localStorage.getItem("user"));
+
+      this.setState({
+        user: user
+      })
     }
 
     componentWillMount() {
+        let user = JSON.parse(window.localStorage.getItem("user"));
+
+        this.setState({
+          user: user
+        })
+
         socket.on('new::user', (msg)=> {
-            alert("New user");
-            let tmp = this.state.markers;
-            tmp.push(msg);
-            this.setState({
-                markers: tmp
-            })
+          let tmp = this.state.markers;
+          tmp.push(msg);
+          this.setState({
+              markers: tmp
+          })
         });
     }
 
@@ -60,8 +75,8 @@ class App extends React.Component {
         if (this.state.markers.length > 0) {
             return this.state.markers.map((item, i)=> {
                 return <Marker
-                    lat={item.ll[0]}
-                    lng={item.ll[1]}
+                    lat={item.geo.ll[0]}
+                    lng={item.geo.ll[1]}
                 />
             })
         }
@@ -165,6 +180,7 @@ class App extends React.Component {
                 }
             ]}>
             {this.renderMarkers()}
+            {(!this.state.user) ? <WelcomePage callback={this.updateUser}/> : false}
             <InfoWindow
                 lat={coords.lat + 4}
                 lng={coords.lng + 4}
@@ -177,6 +193,43 @@ class App extends React.Component {
                 onClick={this.onClick}/>
         </Gmaps>
     }
+}
+
+class WelcomePage extends React.Component {
+  constructor(props){
+    super(props);
+
+    this.onSubmit = this.onSubmit.bind(this);
+  }
+
+  onSubmit(e){
+    e.preventDefault();
+    let username = this.refs.name.value;
+    let soclink = this.refs.soclink.value;
+    let user = {'name': username, 'social': soclink};
+
+    window.localStorage.setItem("user", JSON.stringify(user))
+    socket.emit("new::user", user);
+    this.props.callback();
+  }
+
+	render(){
+		return <div className="welcome-page col-md-4 col-xs-12 col-sm-12 col-md-offset-4">
+			<h1>Welcome</h1>
+      <p>Please, fill out the fields below</p>
+      <form onSubmit={this.onSubmit}>
+        <label>
+          Your name
+          <input type="text" ref="name" placeholder="Your name"></input>
+        </label>
+        <label>
+          Your profile in facebook(instagram, telegram, whatsapp, vkontakte etc...)
+          <input type="text" ref="soclink" placeholder="Your facebook, insta or "></input>
+        </label>
+        <input type="submit" className="button-submit"></input>
+      </form>
+		</div>
+	}
 }
 
 ReactDOM.render(<div><App/></div>, document.getElementById("app"));

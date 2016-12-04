@@ -11,19 +11,30 @@ var getClientAddress = function (req) {
         || req.connection.remoteAddress;
 };
 
+var CONNECTED_LIST = [];
+
 app.use(express.static(__dirname + '/public'));
 
 io.on('connection', function (socket) {
-    console.log('a user connected');
+    console.log('A user connected');
 
     socket.on("new_message", function (data) {
         io.emit("new_message", data);
     })
+
+    socket.on("new::user", function(data){
+      var ip = socket.handshake.address;
+      data.geo = geoip.lookup(ip);
+
+      if(ip.indexOf("127.0.0.1") > -1){
+
+      }else {
+          io.emit("new::user", data);
+      }
+    })
 });
 
 app.get('/*', function (req, res) {
-    console.log(getClientAddress(req));
-    io.emit("new::user", geoip.lookup(getClientAddress(req)));
     res.sendFile(path.join(__dirname, "index.html"));
 });
 

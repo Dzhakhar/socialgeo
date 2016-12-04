@@ -95,7 +95,8 @@
 	        var _this = _possibleConstructorReturn(this, (App.__proto__ || Object.getPrototypeOf(App)).call(this, props));
 
 	        _this.state = {
-	            markers: []
+	            markers: [],
+	            user: false
 	        };
 
 	        _this.onMapCreated = _this.onMapCreated.bind(_this);
@@ -104,16 +105,31 @@
 	        _this.onClick = _this.onClick.bind(_this);
 	        _this.renderMarkers = _this.renderMarkers.bind(_this);
 	        _this.componentWillMount = _this.componentWillMount.bind(_this);
+	        _this.updateUser = _this.updateUser.bind(_this);
 	        return _this;
 	    }
 
 	    _createClass(App, [{
+	        key: "updateUser",
+	        value: function updateUser() {
+	            var user = JSON.parse(window.localStorage.getItem("user"));
+
+	            this.setState({
+	                user: user
+	            });
+	        }
+	    }, {
 	        key: "componentWillMount",
 	        value: function componentWillMount() {
 	            var _this2 = this;
 
+	            var user = JSON.parse(window.localStorage.getItem("user"));
+
+	            this.setState({
+	                user: user
+	            });
+
 	            socket.on('new::user', function (msg) {
-	                alert("New user");
 	                var tmp = _this2.state.markers;
 	                tmp.push(msg);
 	                _this2.setState({
@@ -149,8 +165,8 @@
 	            if (this.state.markers.length > 0) {
 	                return this.state.markers.map(function (item, i) {
 	                    return _react2.default.createElement(_reactGmaps.Marker, {
-	                        lat: item.ll[0],
-	                        lng: item.ll[1]
+	                        lat: item.geo.ll[0],
+	                        lng: item.geo.ll[1]
 	                    });
 	                });
 	            }
@@ -237,6 +253,7 @@
 	                        stylers: [{ color: "#FFFFFF" }]
 	                    }] },
 	                this.renderMarkers(),
+	                !this.state.user ? _react2.default.createElement(WelcomePage, { callback: this.updateUser }) : false,
 	                _react2.default.createElement(_reactGmaps.InfoWindow, {
 	                    lat: coords.lat + 4,
 	                    lng: coords.lng + 4,
@@ -252,6 +269,70 @@
 	    }]);
 
 	    return App;
+	}(_react2.default.Component);
+
+	var WelcomePage = function (_React$Component2) {
+	    _inherits(WelcomePage, _React$Component2);
+
+	    function WelcomePage(props) {
+	        _classCallCheck(this, WelcomePage);
+
+	        var _this3 = _possibleConstructorReturn(this, (WelcomePage.__proto__ || Object.getPrototypeOf(WelcomePage)).call(this, props));
+
+	        _this3.onSubmit = _this3.onSubmit.bind(_this3);
+	        return _this3;
+	    }
+
+	    _createClass(WelcomePage, [{
+	        key: "onSubmit",
+	        value: function onSubmit(e) {
+	            e.preventDefault();
+	            var username = this.refs.name.value;
+	            var soclink = this.refs.soclink.value;
+	            var user = { 'name': username, 'social': soclink };
+
+	            window.localStorage.setItem("user", JSON.stringify(user));
+	            socket.emit("new::user", user);
+	            this.props.callback();
+	        }
+	    }, {
+	        key: "render",
+	        value: function render() {
+	            return _react2.default.createElement(
+	                "div",
+	                { className: "welcome-page col-md-4 col-xs-12 col-sm-12 col-md-offset-4" },
+	                _react2.default.createElement(
+	                    "h1",
+	                    null,
+	                    "Welcome"
+	                ),
+	                _react2.default.createElement(
+	                    "p",
+	                    null,
+	                    "Please, fill out the fields below"
+	                ),
+	                _react2.default.createElement(
+	                    "form",
+	                    { onSubmit: this.onSubmit },
+	                    _react2.default.createElement(
+	                        "label",
+	                        null,
+	                        "Your name",
+	                        _react2.default.createElement("input", { type: "text", ref: "name", placeholder: "Your name" })
+	                    ),
+	                    _react2.default.createElement(
+	                        "label",
+	                        null,
+	                        "Your profile in facebook(instagram, telegram, whatsapp, vkontakte etc...)",
+	                        _react2.default.createElement("input", { type: "text", ref: "soclink", placeholder: "Your facebook, insta or " })
+	                    ),
+	                    _react2.default.createElement("input", { type: "submit", className: "button-submit" })
+	                )
+	            );
+	        }
+	    }]);
+
+	    return WelcomePage;
 	}(_react2.default.Component);
 
 	_reactDom2.default.render(_react2.default.createElement(
